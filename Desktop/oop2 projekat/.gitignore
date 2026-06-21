@@ -1,0 +1,32 @@
+# Compiled Java files
+*.class
+
+# Eclipse build folder
+bin/
+
+# Maven/Gradle build folders, ako ih nekad budeš imao
+target/
+build/
+
+# Eclipse workspace metadata
+.metadata/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# IntelliJ / VS Code ako slučajno otvoriš projekat tamo
+.idea/
+.vscode/
+
+# Package files
+*.jar
+*.war
+*.ear
