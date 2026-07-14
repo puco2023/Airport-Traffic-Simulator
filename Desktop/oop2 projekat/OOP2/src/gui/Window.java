@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.DefaultTableModel;
-
+import java.awt.EventQueue;
 public class Window extends Frame {
 
     private TextField airportNameField = new TextField(20);
@@ -29,7 +29,14 @@ public class Window extends Frame {
     private Choice toAirportChoice = new Choice();
     private TextField departureTimeField = new TextField(6);
     private TextField flightDurationField = new TextField(5);
-
+    private Thread simulationClockThread;
+    private volatile boolean simulationClockThreadRunning = true;
+    private TextField simulationTimeField =
+            new TextField(
+                "Day: 1   Time: 00:00",
+                22
+            );
+    
     private DefaultTableModel airportTableModel = new DefaultTableModel(
             new Object[]{"Code", "Name", "X", "Y", "Visible"}, 0
     ) {
@@ -67,14 +74,17 @@ public class Window extends Frame {
     private ArrayList<Flight> flights = new ArrayList<>();
 
     private Map map = new Map(airports, flights);
-
+    
     private final AirportFlightService dataService;
     private final FileStorageService fileService;
     private final InactivityMonitor inactivityMonitor;
 
     public Window() {
-        super("Air Traffic Manager - Phase A");
-
+        super("Air Traffic Manager - Phase C");
+        
+        simulationTimeField.setEditable(false);
+        simulationTimeField.setFocusable(false);
+        
         setSize(1000, 600);
         setLayout(new BorderLayout());
 
@@ -94,7 +104,7 @@ public class Window extends Frame {
                 map, statusLabel
         );
 
-        inactivityMonitor = new InactivityMonitor(this, this::closeApplication);
+        inactivityMonitor = new InactivityMonitor(this, this::closeApplication,map::isBlinking,map::isSimulationPaused,map::isSimulationRunning);
 
         PanelFactory panelFactory = new PanelFactory(
                 airportNameField, airportCodeField, airportXField, airportYField,
@@ -128,7 +138,7 @@ public class Window extends Frame {
         });
 
         inactivityMonitor.start();
-
+        startSimulationClockThread();
         setVisible(true);
     }
 
@@ -137,5 +147,46 @@ public class Window extends Frame {
         map.stopBlinking();
         dispose();
         System.exit(0);
+    }
+    private void updateSimulationTime() {
+    	
+        int totalMinutes = map.getSimulationMinutes();
+        int day = totalMinutes / 1440 + 1;
+        int minutesInCurrentDay = totalMinutes % 1440;
+        int hours = minutesInCurrentDay / 60;
+        int minutes = minutesInCurrentDay % 60;
+        simulationTimeField.setText(
+            String.format(
+                "Day: %d   Time: %02d:%02d",
+                day,
+                hours,
+                minutes
+            )
+        );
+    }
+    private void startSimulationClockThread() {
+        simulationClockThread = new Thread(() -> {
+            while (simulationClockThreadRunning) {
+                EventQueue.invokeLater(() -> {
+                	
+                    updateSimulationTime();
+                });
+                try {
+                    Thread.sleep(200);
+                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        simulationClockThread.setName(
+            "Simulation clock thread"
+        );
+
+        simulationClockThread.start();
+    }
+    public TextField getSimulationTimeField() {
+        return simulationTimeField;
     }
 }

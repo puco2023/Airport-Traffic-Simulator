@@ -12,7 +12,7 @@ import java.awt.Toolkit;
 import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-
+import java.util.function.BooleanSupplier;
 class InactivityMonitor {
 
     private static final long INACTIVITY_TIME = 60_000;
@@ -27,10 +27,15 @@ class InactivityMonitor {
     private Thread thread;
     private Dialog dialog;
     private Label label;
-
-    InactivityMonitor(Frame owner, Runnable onTimeout) {
+    private BooleanSupplier isAirportBlinking;
+    private BooleanSupplier isSimulationPaused;
+    private BooleanSupplier isSimulationRunning;
+    InactivityMonitor(Frame owner, Runnable onTimeout,BooleanSupplier isAirportBlinking, BooleanSupplier isPaused,BooleanSupplier isSimulationRunning) {
         this.owner = owner;
         this.onTimeout = onTimeout;
+        this.isAirportBlinking=isAirportBlinking;
+        this.isSimulationPaused = isPaused;
+        this.isSimulationRunning=isSimulationRunning;
     }
 
     void start() {
@@ -40,82 +45,54 @@ class InactivityMonitor {
 
     void stop() {
         running = false;
-
         if (dialog != null) {
             dialog.dispose();
         }
     }
-
     private void registerUserAction() {
-
-        lastUserActionTime =
-                System.currentTimeMillis();
-
+        lastUserActionTime = System.currentTimeMillis();
         closeInactivityDialog();
     }
-
     private void startInactivityThread() {
-
-        lastUserActionTime =
-                System.currentTimeMillis();
-
+        lastUserActionTime = System.currentTimeMillis();
         thread = new Thread(() -> {
-
             while (running) {
-
-                long currentTime =
-                        System.currentTimeMillis();
-
-                long elapsedTime =
-                        currentTime
-                        - lastUserActionTime;
-
-                long remainingTime =
-                        INACTIVITY_TIME
-                        - elapsedTime;
-
-
+                if (isAirportBlinking.getAsBoolean() || ((isSimulationRunning.getAsBoolean() && !isSimulationPaused.getAsBoolean()))) {
+                    lastUserActionTime = System.currentTimeMillis();
+                    try {
+                        Thread.sleep(200);
+                    }
+                    catch (InterruptedException e) {
+                        break;
+                    }
+                    continue;
+                }
+                long currentTime = System.currentTimeMillis();
+                long elapsedTime = currentTime - lastUserActionTime;
+                long remainingTime = INACTIVITY_TIME - elapsedTime;
                 if (remainingTime <= 0) {
-
                     EventQueue.invokeLater(onTimeout);
-
                     break;
                 }
-
-
                 if (remainingTime <= WARNING_TIME) {
-
-                    int remainingSeconds =
-                            (int) Math.ceil(
-                                remainingTime / 1000.0
-                            );
-
+                    int remainingSeconds =(int) Math.ceil(remainingTime / 1000.0);
                     EventQueue.invokeLater(() -> {
-
                         showInactivityDialog(
                             remainingSeconds
                         );
-
                     });
                 }
-
-
                 try {
-
                     Thread.sleep(200);
-
                 }
                 catch (InterruptedException e) {
-
                     break;
                 }
             }
         });
 
 
-        thread.setName(
-            "Inactivity thread"
-        );
+        thread.setName("Inactivity thread");
 
         thread.start();
     }
@@ -125,68 +102,23 @@ class InactivityMonitor {
 
         if (dialog == null) {
 
-            dialog =
-                    new Dialog(
-                        owner,
-                        "Inactivity warning",
-                        false
-                    );
-
-            dialog.setLayout(
-                new BorderLayout(10, 10)
-            );
-
-
-            label =
-                    new Label(
-                        "",
-                        Label.CENTER
-                    );
-
-
-            Button continueButton =
-                    new Button(
-                        "Continue"
-                    );
-
-
+            dialog = new Dialog(owner,"Inactivity warning",false);
+            dialog.setLayout(new BorderLayout(10, 10));
+            label = new Label("",Label.CENTER);
+            Button continueButton = new Button("Continue");
             continueButton.addActionListener(e -> {
-
                 registerUserAction();
-
             });
-
-
-            dialog.add(
-                label,
-                BorderLayout.CENTER
-            );
+            dialog.add(label,BorderLayout.CENTER);
 
             dialog.add(
                 continueButton,
                 BorderLayout.SOUTH
             );
-
-
-            dialog.setSize(
-                420,
-                140
-            );
-
-
-            dialog.setLocationRelativeTo(
-                owner
-            );
+            dialog.setSize(420,140);
+            dialog.setLocationRelativeTo(owner);
         }
-
-
-        label.setText(
-
-            "The application will close in "
-            + remainingSeconds
-            + " seconds."
-
-        );
+        label.setText("The application will close in "+ remainingSeconds+ " seconds.");
 
 
         if (!dialog.isVisible()) {
@@ -199,8 +131,7 @@ class InactivityMonitor {
 
         EventQueue.invokeLater(() -> {
 
-            if (dialog != null
-                    && dialog.isVisible()) {
+            if (dialog != null && dialog.isVisible()) {
 
                 dialog.setVisible(false);
             }
@@ -247,9 +178,7 @@ class InactivityMonitor {
 
         Toolkit.getDefaultToolkit()
                 .addAWTEventListener(
-
                     userActivityListener,
-
                     AWTEvent.MOUSE_EVENT_MASK
                     | AWTEvent.KEY_EVENT_MASK
 

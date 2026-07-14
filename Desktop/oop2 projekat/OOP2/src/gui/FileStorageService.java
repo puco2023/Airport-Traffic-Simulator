@@ -14,6 +14,7 @@ import java.awt.Label;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -68,51 +69,36 @@ class FileStorageService {
             statusLabel.setText("Status: Load cancelled.");
             return;
         }
+        Path path = Path.of(fd.getDirectory(), fd.getFile());
+        try {
+        	String text = Files.readString(path);
+        	if(fd.getFile().endsWith(".csv"))
+        	{
+        		loadCsv(text);
+        	}
+        	else if(fd.getFile().endsWith(".json"))
+        	{
+        		loadJson(text);
+        	}
+        	else
+        	{
+        		throw new FileException("unsuported file format.");
+        	}
+        }
+        catch (IOException ioe)
+        {
+        	DialogUtil.showError(owner,"Error while loading.");
+        }
+        catch(FileException fe)
+        {
+        	 DialogUtil.showError(owner, fe.getMessage());
+        }
+        
 
-        File file = new File(fd.getDirectory(), fd.getFile());
-
-
-        String text=null;
-		try {
-			text = Files.readString(file.toPath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		try {
-		    loadCsv(text);
-
-		    statusLabel.setText(
-		        "Status: CSV loaded successfully."
-		    );
-
-		} catch (FileException csvError) {
-
-		    try {
-		        loadJson(text);
-
-		        statusLabel.setText(
-		            "Status: File loaded successfully."
-		        );
-
-		    } catch (FileException jsonError) {
-
-		        DialogUtil.showError(
-		            owner,
-		            "File is not valid.\n"
-		            + jsonError.getMessage()
-		        );
-		    } catch (Exception e) {
-
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 
     }
 
-    private void loadJson(String text) throws Exception {
+    private void loadJson(String text) throws FileException {
         text = text.trim();
 
         if (!text.startsWith("{")) {
@@ -250,7 +236,7 @@ class FileStorageService {
                 continue;
             }
 
-            String sectionMarker = line.startsWith("#") ? line.substring(1).trim() : line;
+            String sectionMarker = line.startsWith("#") ? line.substring(2).trim() : line;
 
             if (sectionMarker.equalsIgnoreCase("AIRPORTS")) {
                 section = "AIRPORTS";
@@ -423,7 +409,6 @@ class FileStorageService {
             statusLabel.setText("Status: File saved successfully.");
 
         } catch (Exception ex) {
-            ex.printStackTrace();
             statusLabel.setText("Status: Save error.");
         }
     }

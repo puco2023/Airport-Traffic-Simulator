@@ -10,7 +10,7 @@ import java.awt.TextField;
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
 
-class AirportFlightService {
+public class AirportFlightService {
 
     private final TextField airportNameField;
     private final TextField airportCodeField;
@@ -31,7 +31,10 @@ class AirportFlightService {
 
     private final Map map;
     private final Label statusLabel;
-
+    public ArrayList<Flight> getFlights()
+    {
+    	return flights;
+    }
     AirportFlightService(
             TextField airportNameField,
             TextField airportCodeField,
@@ -183,20 +186,10 @@ class AirportFlightService {
                 "You must add at least two airports first."
             );
         }
-
-        String fromAirportCode =
-                fromAirportChoice.getSelectedItem();
-
-        String toAirportCode =
-                toAirportChoice.getSelectedItem();
-
-        String departureTime =
-                departureTimeField.getText().trim();
-
-        String flightDurationString =
-                flightDurationField.getText().trim();
-
-
+        String fromAirportCode = fromAirportChoice.getSelectedItem();
+        String toAirportCode = toAirportChoice.getSelectedItem();
+        String departureTime = departureTimeField.getText().trim();
+        String flightDurationString = flightDurationField.getText().trim();
         if (departureTime.isEmpty()) {
             throw new ValidationException(
                 "Departure time cannot be empty."
@@ -274,38 +267,21 @@ class AirportFlightService {
         }
 
 
-        Flight flight = new Flight(
-            from,
-            to,
-            departureTime,
-            flightDuration
-        );
+        Flight flight = new Flight(from,to,departureTime,flightDuration);
 
         flights.add(flight);
-
-
         flightTableModel.addRow(
             new Object[]{
-
                 fromAirportCode,
                 toAirportCode,
                 departureTime,
                 flightDuration
-
             }
         );
-
-
         departureTimeField.setText("");
-
         flightDurationField.setText("");
-
-
         map.repaint();
-
-        statusLabel.setText(
-            "Status: Flight added."
-        );
+        statusLabel.setText("Status: Flight added.");
     }
 
     private Airport findAirportByCode(String code) {

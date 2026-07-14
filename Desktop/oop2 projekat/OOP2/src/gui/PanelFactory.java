@@ -1,5 +1,6 @@
 package gui;
 
+import Exceptions.SimulationException;
 import Exceptions.ValidationException;
 import model.Map;
 import java.awt.BorderLayout;
@@ -32,7 +33,7 @@ class PanelFactory {
 
     private final Map map;
     private final Label statusLabel;
-    private final Frame owner;
+    private final Window owner;
 
     private final AirportFlightService dataService;
     private final FileStorageService fileService;
@@ -50,7 +51,7 @@ class PanelFactory {
             JTable flightTable,
             Map map,
             Label statusLabel,
-            Frame owner,
+            Window owner,
             AirportFlightService dataService,
             FileStorageService fileService) {
 
@@ -72,10 +73,14 @@ class PanelFactory {
     }
 
     Panel createTopPanel() {
+        Panel wrapper = new Panel(new BorderLayout());
+
         Panel panel = new Panel();
         panel.setLayout(
             new FlowLayout()
         );
+        TextField tf = owner.getSimulationTimeField();
+       
         Button load = new Button("Load");
 
         Button save = new Button("Save");
@@ -93,48 +98,31 @@ class PanelFactory {
             e -> fileService.saveFile()
         );
 
-        start.addActionListener(
-            e -> map.startSimulation()
-        );
+        start.addActionListener(e -> {
+            try {
+                map.startSimulation();
+            } catch (SimulationException se) {
+                DialogUtil.showError(owner, se.getMessage());
+            }
+        });
         reset.addActionListener(e -> {
-
             map.resetSimulation();
-
             pause.setLabel("Pause");
-
-            statusLabel.setText(
-                "Status: Simulation reset."
-            );
+            statusLabel.setText("Status: Simulation reset.");
         });
 
         pause.addActionListener(e -> {
 
             if (!map.isSimulationRunning()) {
-
-                DialogUtil.showError(
-                    owner,
-                    "Simulation is not running."
-                );
-
+                DialogUtil.showError(owner,"Simulation is not running.");
                 return;
             }
-
-
             map.togglePause();
-
-
             if (map.isSimulationPaused()) {
-
-                pause.setLabel(
-                    "Resume"
-                );
-
+                pause.setLabel("Resume");
             }
             else {
-
-                pause.setLabel(
-                    "Pause"
-                );
+                pause.setLabel("Pause");
             }
         });
         panel.add(load);
@@ -142,7 +130,11 @@ class PanelFactory {
         panel.add(start);
         panel.add(pause);
         panel.add(reset);
-        return panel;
+        panel.add(tf);
+        wrapper.add(panel, BorderLayout.CENTER);
+
+
+        return wrapper;
     }
 
     Panel createMainPanel() {

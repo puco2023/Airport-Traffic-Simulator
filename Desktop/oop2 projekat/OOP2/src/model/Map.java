@@ -11,7 +11,7 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-
+import Exceptions.SimulationException;
 public class Map extends Canvas implements Runnable {
     private ArrayList<Flight> flights;
     private ArrayList<Airport> airports;
@@ -22,7 +22,10 @@ public class Map extends Canvas implements Runnable {
     public static final int AIRPORT_SIZE = 10;
     private static final int CLICK_RADIUS = 8;
     private Simulation simulation = new Simulation();
-
+    public boolean isBlinking()
+    {
+    	return selectedAirport!=null;
+    }
     public Map(ArrayList<Airport> a, ArrayList<Flight> f) {
         flights = f;
         airports = a;
@@ -141,7 +144,7 @@ public class Map extends Canvas implements Runnable {
             int end = sf.getArrivalMinutes();
             double progress = Math.min(1, Math.max(0,
                 (double)(simulation.getSimulationMinutes() - start) / (end - start)));
-            if(progress==0) continue;
+            if(progress==0 || progress==1) continue;
             int x1 = mapX(from.getX(), width), y1 = mapY(from.getY(), height);
             int x2 = mapX(to.getX(), width), y2 = mapY(to.getY(), height);
             int planeX = (int)(x1 + progress * (x2 - x1));
@@ -180,7 +183,7 @@ public class Map extends Canvas implements Runnable {
         if (blinkThread != null) blinkThread.interrupt();
     }
 
-    public void startSimulation() {
+    public void startSimulation()throws SimulationException {
         simulation.start(flights, this::repaint);
     }
 

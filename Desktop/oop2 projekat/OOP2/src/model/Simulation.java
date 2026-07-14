@@ -2,7 +2,8 @@ package model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import gui.AirportFlightService;
+import Exceptions.SimulationException;
 public class Simulation {
     private ArrayList<SimulationFlight> simFlights = new ArrayList<>();
     private volatile int simulationMinutes = 0;
@@ -26,7 +27,7 @@ public class Simulation {
     public ArrayList<SimulationFlight> getSimFlights() {
         return simFlights;
     }
-
+    
     public int getSimulationMinutes() {
         return simulationMinutes;
     }
@@ -51,7 +52,17 @@ public class Simulation {
         }
     }
 
-    public void start(ArrayList<Flight> flights, Runnable onTick) {
+    public void start(ArrayList<Flight> flights, Runnable onTick)throws SimulationException {
+    	boolean isSimEmpty=true;
+    	for(Flight f : flights)
+    	{
+    		Airport a1 = f.getFrom();
+    		Airport a2 = f.getTo();
+    		if(a1.isVisible() && a2.isVisible())
+    			isSimEmpty=false;
+    	}
+    	if(isSimEmpty)
+    		throw new SimulationException("There are no flights.");
         if (simulationRunning) return;
         prepare(flights);
         simulationMinutes = 0;
@@ -73,6 +84,7 @@ public class Simulation {
     }
 
     private void update() {
+
         simulationMinutes += 2;
         for (SimulationFlight sf : simFlights) {
             if (sf.isFinished()) continue;
