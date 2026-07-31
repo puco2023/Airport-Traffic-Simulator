@@ -60,6 +60,33 @@ public class Map extends Canvas implements Runnable {
         }
         return null;
     }
+    public SimulationFlight findPlaneAtPoint(MouseEvent e)
+    {
+    	int width = getWidth();
+    	int height = getHeight();
+    	for(SimulationFlight sf : simulation.getSimFlights())
+    	{
+    		Flight f = sf.getFlight();
+            Airport from = f.getFrom();
+            Airport to = f.getTo();
+            if (!from.isVisible() || !to.isVisible()) continue;
+
+            int start = sf.getRealDepartureMinutes();
+            int end = sf.getArrivalMinutes();
+            double progress = Math.min(1, Math.max(0,
+                (double)(simulation.getSimulationMinutes() - start) / (end - start)));
+            double x = e.getX();
+            double y = e.getY();
+            int x1 = mapX(from.getX(), width), y1 = mapY(from.getY(), height);
+            int x2 = mapX(to.getX(), width), y2 = mapY(to.getY(), height);
+            int planeX = (int)(x1 + progress * (x2 - x1));
+            int planeY = (int)(y1 + progress * (y2 - y1));
+            if(Math.sqrt(Math.pow(planeX-x, 2)+Math.pow(planeY-y, 2))<5) {
+            	return sf;
+            }
+    	}
+    	return null;
+    }
 
     private void handleMouseClick(Point p) {
         Airport clicked = findAirportAtPoint(p);
