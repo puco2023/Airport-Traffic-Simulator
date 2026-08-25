@@ -90,7 +90,7 @@ public class Simulation {
             if (sf.isFinished()) continue;
             if (!sf.isActive() && sf.getRealDepartureMinutes() <= simulationMinutes)
                 sf.setActive(true);
-            if (sf.isActive() && sf.getArrivalMinutes() >= simulationMinutes) {
+            if (sf.isActive() && sf.getArrivalMinutes() <= simulationMinutes) {
                 sf.setActive(false);
                 sf.setFinished(true);
             }
